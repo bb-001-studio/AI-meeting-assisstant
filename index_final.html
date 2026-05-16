@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeetMind · AI 视频会议助手</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080c14;--bg2:#0d1220;--bg3:#111827;--surface:#141d2e;--surface2:#1a2540;--border:rgba(59,130,246,0.15);--border2:rgba(59,130,246,0.3);--blue:#3b82f6;--blue-bright:#60a5fa;--blue-glow:rgba(59,130,246,0.18);--cyan:#06b6d4;--text:#e2e8f0;--text2:#94a3b8;--text3:#475569;--mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--red:#ef4444;--green:#22c55e;--amber:#f59e0b;--sidebar:220px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+.sidebar{width:var(--sidebar);min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50}
+.sidebar-logo{display:flex;align-items:center;gap:10px;padding:22px 20px 20px;font-family:var(--mono);font-size:14px;font-weight:700;color:#f0f9ff;letter-spacing:-.02em;border-bottom:1px solid var(--border)}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.sidebar-new-btn{margin:16px 14px;padding:11px 0;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s}
+.sidebar-new-btn:hover{background:#2563eb;box-shadow:0 4px 20px rgba(59,130,246,.35)}
+.sidebar-section-label{font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:16px 20px 6px}
+.sidebar-nav{display:flex;flex-direction:column;gap:2px;padding:0 10px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent;font-family:var(--sans);text-align:left;width:100%}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item.active{background:var(--blue-glow);color:var(--blue-bright);border:1px solid var(--border2)}
+.nav-item .nav-icon{font-size:16px;flex-shrink:0}
+.nav-item .nav-badge{margin-left:auto;background:var(--blue);color:#fff;font-size:10px;font-family:var(--mono);padding:1px 6px;border-radius:999px;font-weight:700}
+.sidebar-bottom{margin-top:auto;padding:12px 10px;border-top:1px solid var(--border)}
+.user-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;transition:all .15s}
+.user-row:hover{background:var(--surface)}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.user-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-plan{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.main-content{margin-left:var(--sidebar);flex:1;min-height:100vh;position:relative;z-index:1}
+.page{display:none;animation:fadeIn .25s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.home-hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 40px;position:relative}
+.home-hero::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);width:700px;height:400px;background:radial-gradient(ellipse,rgba(59,130,246,0.1) 0%,transparent 65%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:999px;border:1px solid var(--border2);background:var(--blue-glow);font-size:11px;font-family:var(--mono);color:var(--blue-bright);margin-bottom:32px;letter-spacing:.06em}
+.home-hero h1{font-size:clamp(36px,5vw,60px);font-weight:600;line-height:1.08;letter-spacing:-.03em;margin-bottom:20px}
+.home-hero h1 span{color:var(--blue-bright)}
+.home-hero p{font-size:16px;color:var(--text2);max-width:480px;margin:0 auto 44px;line-height:1.75}
+.btn-new-meeting{display:inline-flex;align-items:center;gap:10px;padding:16px 44px;border-radius:14px;background:var(--blue);color:#fff;font-size:16px;font-weight:600;font-family:var(--sans);border:none;cursor:pointer;transition:all .2s;margin-bottom:16px}
+.btn-new-meeting:hover{background:#2563eb;box-shadow:0 6px 32px rgba(59,130,246,.4);transform:translateY(-1px)}
+.hero-sub-actions{display:flex;gap:12px;justify-content:center;margin-bottom:56px}
+.btn-ghost-lg{padding:10px 22px;border-radius:10px;font-size:14px;font-weight:500;background:transparent;color:var(--text2);border:1px solid var(--border2);cursor:pointer;font-family:var(--sans);transition:all .2s}
+.btn-ghost-lg:hover{border-color:var(--blue);color:var(--blue-bright)}
+.quick-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:660px;width:100%;margin:0 auto}
+.qa-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:all .2s;text-align:left;position:relative;overflow:hidden}
+.qa-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0;transition:opacity .2s}
+.qa-card.blue::before{background:linear-gradient(90deg,var(--blue),var(--cyan))}
+.qa-card.green::before{background:linear-gradient(90deg,var(--green),#06b6d4)}
+.qa-card.amber::before{background:linear-gradient(90deg,var(--amber),#f97316)}
+.qa-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.qa-card:hover::before{opacity:1}
+.qa-icon{font-size:22px;margin-bottom:10px}
+.qa-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.qa-desc{font-size:12px;color:var(--text2);line-height:1.5}
+.page-header{padding:32px 36px 20px;border-bottom:1px solid var(--border)}
+.page-title{font-size:20px;font-weight:600;letter-spacing:-.02em;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--text2)}
+.page-body{padding:28px 36px;max-width:960px}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+.stat-num{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue-bright)}
+.stat-label{font-size:12px;color:var(--text3);margin-top:4px;font-weight:500}
+.meetings-list{display:flex;flex-direction:column;gap:10px}
+.meeting-row{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .15s}
+.meeting-row:hover{border-color:var(--border2);background:var(--surface2)}
+.meeting-color-bar{width:3px;height:36px;border-radius:2px;flex-shrink:0}
+.meeting-name{font-size:14px;font-weight:500;margin-bottom:4px}
+.meeting-meta{font-size:12px;color:var(--text3);font-family:var(--mono)}
+.meeting-tags{display:flex;gap:6px;flex-shrink:0;margin-left:auto}
+.mtag{font-size:11px;padding:3px 9px;border-radius:5px;font-family:var(--mono);background:var(--blue-glow);color:var(--blue-bright);border:1px solid var(--border2)}
+.mtag.done{background:rgba(34,197,94,0.1);color:var(--green);border-color:rgba(34,197,94,0.3)}
+.mtag.live{background:rgba(239,68,68,0.1);color:var(--red);border-color:rgba(239,68,68,0.3)}
+.form-label{font-size:11px;font-family:var(--mono);color:var(--blue);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;display:block}
+.form-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-size:14px;font-family:var(--sans);outline:none;margin-bottom:20px}
+.form-input:focus{border-color:var(--blue)}
+.platforms{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px}
+.platform-badge{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.platform-badge:hover,.platform-badge.on{border-color:var(--blue);color:var(--blue-bright);background:var(--blue-glow)}
+.platform-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--text3);transition:all .2s}
+.platform-badge.on .dot{background:var(--blue);box-shadow:0 0 6px var(--blue)}
+.templates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:24px}
+.template-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:6px}
+.template-item:hover{border-color:var(--border2);background:var(--surface2)}
+.template-item.selected{border-color:var(--blue);background:var(--blue-glow)}
+.template-icon{font-size:20px}
+.template-name{font-size:13px;font-weight:600}
+.template-desc{font-size:12px;color:var(--text2);line-height:1.5}
+.upload-zone{border:2px dashed var(--border2);border-radius:12px;padding:40px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);margin-bottom:24px}
+.upload-zone:hover{border-color:var(--blue);background:var(--blue-glow)}
+.upload-zone p{font-size:14px;color:var(--text2);margin-top:8px}
+.upload-zone small{font-size:12px;color:var(--text3)}
+.btn-row{display:flex;gap:10px;justify-content:flex-end;padding-top:20px;border-top:1px solid var(--border)}
+.btn-primary-md{padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;background:var(--blue);color:#fff;border:none;cursor:pointer;font-family:var(--sans);transition:all .2s}
+.btn-primary-md:hover{background:#2563eb}
+.btn-ghost-md{padding:10px 20px;border-radius:8px;font-size:14px;background:transparent;color:var(--text2);border:1px solid var(--border);cursor:pointer;font-family:var(--sans);transition:all .2s}
+.btn-ghost-md:hover{border-color:var(--border2);color:var(--text)}
+.meeting-status-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.status-live{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:13px;color:var(--red)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.timer{font-family:var(--mono);font-size:20px;color:var(--text)}
+.meeting-grid{display:grid;grid-template-columns:1fr 340px;gap:16px}
+@media(max-width:860px){.meeting-grid{grid-template-columns:1fr}}
+.transcript-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.transcript-box::-webkit-scrollbar{width:3px}
+.transcript-box::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.t-line{display:flex;flex-direction:column;gap:3px}
+.t-speaker{font-size:11px;font-family:var(--mono);font-weight:700}
+.t-speaker.me{color:var(--blue-bright)}
+.t-speaker.other{color:var(--cyan)}
+.t-text{font-size:13px;color:var(--text2);line-height:1.65}
+.t-time{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.t-new{background:rgba(59,130,246,0.06);border-left:2px solid var(--blue);padding:8px 12px;border-radius:0 8px 8px 0;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+.assist-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;height:400px}
+.assist-title{font-size:12px;font-weight:700;color:var(--blue-bright);font-family:var(--mono)}
+.suggest-chip{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .15s;line-height:1.4}
+.suggest-chip:hover{border-color:var(--blue);color:var(--text);background:var(--blue-glow)}
+.assist-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);outline:none}
+.assist-input:focus{border-color:var(--blue)}
+.assist-send{padding:8px 14px;background:var(--blue);border:none;border-radius:7px;color:#fff;font-size:13px;cursor:pointer;font-family:var(--sans);transition:background .2s}
+.assist-send:hover{background:#2563eb}
+.summary-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:18px}
+.summary-section{margin-bottom:20px}
+.summary-section h4{font-size:11px;font-family:var(--mono);color:var(--blue);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.summary-section p,.summary-section li{font-size:14px;color:var(--text2);line-height:1.7}
+.summary-section ul{padding-left:16px;display:flex;flex-direction:column;gap:5px}
+.share-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;padding-top:18px;border-top:1px solid var(--border)}
+.btn-sm-primary{padding:7px 16px;border-radius:7px;font-size:13px;font-weight:500;background:var(--blue);color:#fff;border:none;cursor:pointer;font-family:var(--sans);transition:all .2s}
+.btn-sm-primary:hover{background:#2563eb}
+.btn-sm-ghost{padding:7px 14px;border-radius:7px;font-size:13px;background:transparent;color:var(--text2);border:1px solid var(--border);cursor:pointer;font-family:var(--sans);transition:all .2s}
+.btn-sm-ghost:hover{border-color:var(--border2);color:var(--text)}
+.action-list{display:flex;flex-direction:column;gap:10px}
+.action-item{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px}
+.action-check{width:20px;height:20px;border-radius:5px;border:2px solid var(--border2);flex-shrink:0;margin-top:2px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;font-size:12px}
+.action-check.done{background:var(--blue);border-color:var(--blue);color:#fff}
+.action-body{flex:1}
+.action-title{font-size:14px;font-weight:500;margin-bottom:5px}
+.action-meta{display:flex;gap:8px;flex-wrap:wrap}
+.action-tag{font-size:11px;padding:2px 8px;border-radius:4px;font-family:var(--mono)}
+.tag-owner{background:rgba(6,182,212,0.12);color:var(--cyan);border:1px solid rgba(6,182,212,0.25)}
+.tag-due{background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid rgba(245,158,11,0.22)}
+.tag-priority{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.22)}
+.filter-row{display:flex;gap:8px;margin-bottom:20px}
+.filter-btn{padding:6px 14px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:var(--sans);transition:all .2s}
+.filter-btn.active{background:var(--blue-glow);border-color:var(--border2);color:var(--blue-bright)}
+.filter-btn:hover:not(.active){border-color:var(--border2);color:var(--text)}
+.integrations{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.integration-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 16px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:all .2s}
+.integration-card:hover{border-color:var(--border2)}
+.int-icon{font-size:22px}
+.int-name{font-size:13px;font-weight:600}
+.int-status{font-size:11px;font-family:var(--mono)}
+.int-connected{color:var(--green)}
+.int-available{color:var(--text3)}
+.int-btn{margin-top:auto;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:var(--sans);transition:all .2s}
+.int-btn:hover{border-color:var(--blue);color:var(--blue-bright)}
+.int-btn.connected{background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.3);color:var(--green)}
+.profile-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:16px}
+.profile-top{display:flex;align-items:center;gap:20px;margin-bottom:24px}
+.profile-avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;flex-shrink:0}
+.profile-name{font-size:18px;font-weight:600;margin-bottom:4px}
+.profile-email{font-size:13px;color:var(--text3);font-family:var(--mono)}
+.profile-plan{margin-left:auto;padding:5px 12px;border-radius:999px;background:var(--blue-glow);border:1px solid var(--border2);font-size:11px;font-family:var(--mono);color:var(--blue-bright)}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.profile-field label{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px}
+.profile-field .value{font-size:14px;color:var(--text)}
+.profile-section-title{font-size:14px;font-weight:600;margin-bottom:14px;color:var(--text2)}
+.pref-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.pref-row:last-child{border-bottom:none}
+.pref-name{font-size:14px;font-weight:500;margin-bottom:2px}
+.pref-desc{font-size:12px;color:var(--text3)}
+.toggle{width:38px;height:22px;border-radius:11px;background:var(--surface2);border:1px solid var(--border2);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--blue);border-color:var(--blue)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+.toggle.on::after{transform:translateX(16px)}
+.rec-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:var(--sans);transition:all .2s}
+.rec-btn-red{background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.28)}
+.rec-btn-red:hover{background:rgba(239,68,68,0.2)}
+.rec-btn-blue{background:var(--blue);color:#fff}
+.rec-btn-blue:hover{background:#2563eb}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-dot"></div>
+    MeetMind
+  </div>
+  <button class="sidebar-new-btn" onclick="showPage('new-meeting')">＋ 新建会议</button>
+  <span class="sidebar-section-label">主菜单</span>
+  <nav class="sidebar-nav">
+    <button class="nav-item active" onclick="showPage('home')"><span class="nav-icon">🏠</span>首页</button>
+    <button class="nav-item" onclick="showPage('meetings')"><span class="nav-icon">📋</span>我的会议<span class="nav-badge">3</span></button>
+    <button class="nav-item" onclick="showPage('actions')"><span class="nav-icon">✅</span>行动项<span class="nav-badge">5</span></button>
+  </nav>
+  <span class="sidebar-section-label" style="margin-top:8px">会议流程</span>
+  <nav class="sidebar-nav">
+    <button class="nav-item" onclick="showPage('prepare')"><span class="nav-icon">📎</span>会前准备</button>
+    <button class="nav-item" onclick="showPage('live')"><span class="nav-icon">🔴</span>会议进行中</button>
+    <button class="nav-item" onclick="showPage('followup')"><span class="nav-icon">📝</span>会后跟进</button>
+  </nav>
+  <span class="sidebar-section-label" style="margin-top:8px">设置</span>
+  <nav class="sidebar-nav">
+    <button class="nav-item" onclick="showPage('integrations')"><span class="nav-icon">🔗</span>集成</button>
+    <button class="nav-item" onclick="showPage('profile')"><span class="nav-icon">👤</span>个人中心</button>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="user-row" onclick="showPage('profile')">
+      <div class="user-avatar">BB</div>
+      <div>
+        <div class="user-name">bb-001-studio</div>
+        <div class="user-plan">Hobby Plan</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main class="main-content">
+
+  <!-- 首页 -->
+  <div id="page-home" class="page active">
+    <div class="home-hero">
+      <div class="hero-badge">● AI-POWERED MEETING ASSISTANT</div>
+      <h1>让每一场会议<br><span>更高效，更智能</span></h1>
+      <p>从会前准备到会后跟进，MeetMind 全程陪伴，帮你聚焦真正重要的事情。</p>
+      <button class="btn-new-meeting" onclick="showPage('new-meeting')">▶ 开始新会议</button>
+      <div class="hero-sub-actions">
+        <button class="btn-ghost-lg" onclick="showPage('meetings')">查看历史会议</button>
+        <button class="btn-ghost-lg" onclick="showPage('actions')">待处理行动项 (5)</button>
+      </div>
+      <div class="quick-actions">
+        <div class="qa-card blue" onclick="showPage('prepare')">
+          <div class="qa-icon">📎</div>
+          <div class="qa-title">会前准备</div>
+          <div class="qa-desc">选择平台、模板，上传资料</div>
+        </div>
+        <div class="qa-card green" onclick="showPage('live')">
+          <div class="qa-icon">🎙️</div>
+          <div class="qa-title">实时转录</div>
+          <div class="qa-desc">AI 实时记录 + Live Assist</div>
+        </div>
+        <div class="qa-card amber" onclick="showPage('followup')">
+          <div class="qa-icon">📝</div>
+          <div class="qa-title">会后跟进</div>
+          <div class="qa-desc">智能纪要 + 行动项提取</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 我的会议 -->
+  <div id="page-meetings" class="page">
+    <div class="page-header"><div class="page-title">我的会议</div><div class="page-sub">共 3 场会议记录</div></div>
+    <div class="page-body">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">本月会议总数</div></div>
+        <div class="stat-card"><div class="stat-num">47:23</div><div class="stat-label">平均会议时长</div></div>
+        <div class="stat-card"><div class="stat-num">87%</div><div class="stat-label">行动项完成率</div></div>
+      </div>
+      <div class="meetings-list">
+        <div class="meeting-row" onclick="showPage('followup')">
+          <div class="meeting-color-bar" style="background:var(--blue)"></div>
+          <div style="flex:1;min-width:0"><div class="meeting-name">Q3 产品评审会议</div><div class="meeting-meta">2025-07-14 · 47:23 · 5人 · 腾讯会议</div></div>
+          <div class="meeting-tags"><span class="mtag done">已完成</span><span class="mtag">产品研发</span></div>
+        </div>
+        <div class="meeting-row">
+          <div class="meeting-color-bar" style="background:var(--green)"></div>
+          <div style="flex:1;min-width:0"><div class="meeting-name">候选人面试 · 张三</div><div class="meeting-meta">2025-07-12 · 32:10 · 3人 · 飞书会议</div></div>
+          <div class="meeting-tags"><span class="mtag done">已完成</span><span class="mtag">面试记录</span></div>
+        </div>
+        <div class="meeting-row" onclick="showPage('live')">
+          <div class="meeting-color-bar" style="background:var(--red)"></div>
+          <div style="flex:1;min-width:0"><div class="meeting-name">客户销售通话 · ABC Corp</div><div class="meeting-meta">今天 · 进行中 · Zoom</div></div>
+          <div class="meeting-tags"><span class="mtag live">● 进行中</span><span class="mtag">销售通话</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新建会议 -->
+  <div id="page-new-meeting" class="page">
+    <div class="page-header"><div class="page-title">新建会议</div><div class="page-sub">完成以下设置，开始你的 AI 辅助会议</div></div>
+    <div class="page-body">
+      <div style="max-width:680px">
+        <label class="form-label">会议名称</label>
+        <input class="form-input" type="text" placeholder="例：Q3 产品评审 · 2025-07-15">
+        <label class="form-label">选择接入平台</label>
+        <div class="platforms">
+          <div class="platform-badge on" onclick="togglePlatform(this)"><span class="dot"></span>腾讯会议</div>
+          <div class="platform-badge" onclick="togglePlatform(this)"><span class="dot"></span>飞书会议</div>
+          <div class="platform-badge" onclick="togglePlatform(this)"><span class="dot"></span>Zoom</div>
+          <div class="platform-badge" onclick="togglePlatform(this)"><span class="dot"></span>Microsoft Teams</div>
+          <div class="platform-badge" onclick="togglePlatform(this)"><span class="dot"></span>Google Meet</div>
+          <div class="platform-badge" onclick="togglePlatform(this)"><span class="dot"></span>Webex</div>
+        </div>
+        <label class="form-label">选择会议模板</label>
+        <div class="templates-grid">
+          <div class="template-item selected" onclick="selectTemplate(this)"><div class="template-icon">💼</div><div class="template-name">销售客户通话</div><div class="template-desc">需求、痛点、跟进计划</div></div>
+          <div class="template-item" onclick="selectTemplate(this)"><div class="template-icon">👤</div><div class="template-name">面试记录</div><div class="template-desc">候选人、评分、结论</div></div>
+          <div class="template-item" onclick="selectTemplate(this)"><div class="template-icon">🎓</div><div class="template-name">教育内容转录</div><div class="template-desc">课程、知识点、作业</div></div>
+          <div class="template-item" onclick="selectTemplate(this)"><div class="template-icon">⚙️</div><div class="template-name">产品研发协作</div><div class="template-desc">需求对齐、技术决策</div></div>
+          <div class="template-item" onclick="selectTemplate(this)"><div class="template-icon">📊</div><div class="template-name">周会复盘</div><div class="template-desc">进展、问题、资源</div></div>
+          <div class="template-item" onclick="selectTemplate(this)"><div class="template-icon">✏️</div><div class="template-name">自定义模板</div><div class="template-desc">从空白自由设计</div></div>
+        </div>
+        <label class="form-label">上传会议资料（可选）</label>
+        <div class="upload-zone" onclick="simulateUpload(this)">
+          <div style="font-size:32px">📎</div>
+          <p>拖拽文件至此处，或点击上传</p>
+          <small>支持 PDF · DOCX · PPTX · MP4 · MP3，最大 200MB</small>
+        </div>
+        <div class="btn-row">
+          <button class="btn-ghost-md" onclick="showPage('home')">取消</button>
+          <button class="btn-primary-md" onclick="showPage('live')">▶ 立即开始会议</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 会前准备 -->
+  <div id="page-prepare" class="page">
+    <div class="page-header"><div class="page-title">会前准备</div><div class="page-sub">资料准备完成后即可开始会议</div></div>
+    <div class="page-body">
+      <div style="max-width:640px">
+        <label class="form-label">接入平台</label>
+        <div class="platforms">
+          <div class="platform-badge on" onclick="togglePlatform(this)"><span class="dot"></span>腾讯会议</div>
+          <div class="platform-badge" onclick="togglePlatform(this)"><span class="dot"></span>飞书会议</div>
+          <div class="platform-badge" onclick="togglePlatform(this)"><span class="dot"></span>Zoom</div>
+          <div class="platform-badge" onclick="togglePlatform(this)"><span class="dot"></span>Google Meet</div>
+        </div>
+        <label class="form-label">上传资料</label>
+        <div class="upload-zone" onclick="simulateUpload(this)">
+          <div style="font-size:32px">📎</div>
+          <p>拖拽文件至此处，或点击上传</p>
+          <small>支持 PDF · DOCX · PPTX · MP4 · MP3</small>
+        </div>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn-primary-md" onclick="showPage('live')">▶ 进入会议</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 会议进行中 -->
+  <div id="page-live" class="page">
+    <div class="page-header"><div class="page-title">Q3 产品评审会议</div><div class="page-sub">腾讯会议 #892-564-371 · 产品研发协作模板</div></div>
+    <div class="page-body" style="max-width:100%">
+      <div class="meeting-status-bar">
+        <div class="status-live"><div class="live-dot"></div>实时转录中</div>
+        <div class="timer" id="timer">00:23:41</div>
+        <div style="display:flex;gap:10px">
+          <button class="rec-btn rec-btn-red" onclick="this.textContent=this.textContent==='⏸ 暂停'?'▶ 继续':'⏸ 暂停'">⏸ 暂停</button>
+          <button class="rec-btn rec-btn-blue" onclick="showPage('followup')">✓ 结束会议</button>
+        </div>
+      </div>
+      <div class="meeting-grid">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--blue);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">实时转录</div>
+          <div class="transcript-box" id="transcript">
+            <div class="t-line"><div class="t-speaker me">张伟（主持人）</div><div class="t-text">好的大家都进来了，我们开始今天的产品评审会议。本次主要讨论 Q3 的功能规划和资源分配问题。</div><div class="t-time">00:00:12</div></div>
+            <div class="t-line"><div class="t-speaker other">李明（产品）</div><div class="t-text">我这边准备了一个需求文档，主要聚焦在用户增长工具和留存优化两个方向，预计需要 3 个工程师两周时间。</div><div class="t-time">00:01:45</div></div>
+            <div class="t-line"><div class="t-speaker me">张伟（主持人）</div><div class="t-text">资源方面我们有些紧张，需要跟王总确认一下排期，能不能把留存那块往后推到 Q4？</div><div class="t-time">00:03:20</div></div>
+            <div class="t-line"><div class="t-speaker other">陈晓（技术）</div><div class="t-text">从技术角度来说，用户增长工具的底层依赖留存系统，如果分开做可能会有重复建设的问题，建议一起规划。</div><div class="t-time">00:04:58</div></div>
+            <div class="t-line t-new"><div class="t-speaker other">李明（产品）</div><div class="t-text">那我们是不是可以先做一个最小可行版本，把核心功能做完，扩展功能留到迭代？</div><div class="t-time">00:23:38</div></div>
+          </div>
+          <button style="margin-top:10px;padding:6px 14px;border-radius:7px;font-size:12px;background:transparent;color:var(--text2);border:1px solid var(--border);cursor:pointer;font-family:var(--sans)" onclick="addTranscriptLine()">+ 模拟转录内容</button>
+        </div>
+        <div class="assist-box">
+          <div class="assist-title">⚡ LIVE ASSIST</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:2px">基于当前会议实时建议</div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex:1;overflow-y:auto">
+            <div class="suggest-chip" onclick="askAssist(this.textContent)">💡 MVP 方案如何拆分优先级？</div>
+            <div class="suggest-chip" onclick="askAssist(this.textContent)">📊 用户增长与留存的依赖关系？</div>
+            <div class="suggest-chip" onclick="askAssist(this.textContent)">⏱ 这个需求需要多少工程资源？</div>
+            <div class="suggest-chip" onclick="askAssist(this.textContent)">📋 帮我总结目前的分歧点</div>
+            <div id="assist-response" style="display:none;padding:10px;background:var(--bg3);border-radius:7px;border:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.6"></div>
+          </div>
+          <div style="margin:6px 0;padding:10px;background:var(--surface2);border-radius:7px;border:1px solid var(--border)">
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:6px">关键词</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px">
+              <span style="font-size:11px;padding:2px 7px;border-radius:4px;background:var(--blue-glow);color:var(--blue-bright);border:1px solid var(--border2)">Q3规划</span>
+              <span style="font-size:11px;padding:2px 7px;border-radius:4px;background:var(--blue-glow);color:var(--blue-bright);border:1px solid var(--border2)">用户增长</span>
+              <span style="font-size:11px;padding:2px 7px;border-radius:4px;background:var(--blue-glow);color:var(--blue-bright);border:1px solid var(--border2)">留存优化</span>
+              <span style="font-size:11px;padding:2px 7px;border-radius:4px;background:var(--blue-glow);color:var(--blue-bright);border:1px solid var(--border2)">MVP</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:7px">
+            <input class="assist-input" id="assistInput" placeholder="提问，语音或文字…" onkeydown="if(event.key==='Enter')sendAssist()">
+            <button class="assist-send" onclick="sendAssist()">发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 会后跟进 -->
+  <div id="page-followup" class="page">
+    <div class="page-header"><div class="page-title">Q3 产品评审会议 · 会后跟进</div><div class="page-sub">2025-07-14 · 时长 47:23 · 5人 · 腾讯会议 #892-564-371</div></div>
+    <div class="page-body">
+      <div class="summary-box">
+        <div class="summary-section"><h4>会议主题</h4><p>Q3 产品功能规划与资源分配，重点讨论用户增长工具与留存优化模块的开发策略。</p></div>
+        <div class="summary-section"><h4>核心决策</h4><ul><li>采用 MVP 策略，优先交付用户增长工具核心功能，留存扩展功能推至 Q4 迭代</li><li>技术架构统一规划，避免重复建设，由陈晓牵头完成底层设计文档</li><li>本次需求共需 3 名工程师，周期约 3 周，需王总确认排期</li></ul></div>
+        <div class="summary-section"><h4>主要讨论</h4><ul><li>产品侧提出留存系统依赖问题，技术建议统一规划底层</li><li>资源紧张背景下，MVP 方案获得多数认可</li><li>留存功能的边界定义需进一步细化</li></ul></div>
+        <div class="share-row">
+          <button class="btn-sm-primary">📤 发送给参会者</button>
+          <button class="btn-sm-ghost">导出 PDF</button>
+          <button class="btn-sm-ghost">同步至 Notion</button>
+          <button class="btn-sm-ghost">推送至 Slack</button>
+        </div>
+      </div>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--blue);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;margin-top:24px">智能行动项</div>
+      <div class="action-list">
+        <div class="action-item"><div class="action-check" onclick="toggleCheck(this)"></div><div class="action-body"><div class="action-title">完成用户增长工具技术架构设计文档</div><div class="action-meta"><span class="action-tag tag-owner">负责人：陈晓</span><span class="action-tag tag-due">截止：7月18日</span><span class="action-tag tag-priority">高优先级</span></div></div></div>
+        <div class="action-item"><div class="action-check done" onclick="toggleCheck(this)">✓</div><div class="action-body"><div class="action-title" style="text-decoration:line-through;color:var(--text3)">确认 Q3 工程资源排期，同步王总</div><div class="action-meta"><span class="action-tag tag-owner">负责人：张伟</span><span class="action-tag tag-due">截止：7月16日</span></div></div></div>
+        <div class="action-item"><div class="action-check" onclick="toggleCheck(this)"></div><div class="action-body"><div class="action-title">细化留存功能 MVP 边界，输出需求文档</div><div class="action-meta"><span class="action-tag tag-owner">负责人：李明</span><span class="action-tag tag-due">截止：7月21日</span><span class="action-tag tag-priority">中优先级</span></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 行动项 -->
+  <div id="page-actions" class="page">
+    <div class="page-header"><div class="page-title">行动项</div><div class="page-sub">跨会议的所有待办事项汇总</div></div>
+    <div class="page-body">
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="setFilter(this)">全部 (5)</button>
+        <button class="filter-btn" onclick="setFilter(this)">待完成 (3)</button>
+        <button class="filter-btn" onclick="setFilter(this)">高优先级</button>
+        <button class="filter-btn" onclick="setFilter(this)">已完成 (2)</button>
+      </div>
+      <div class="action-list">
+        <div class="action-item"><div class="action-check" onclick="toggleCheck(this)"></div><div class="action-body"><div class="action-title">完成用户增长工具技术架构设计文档</div><div class="action-meta"><span class="action-tag tag-owner">负责人：陈晓</span><span class="action-tag tag-due">截止：7月18日</span><span class="action-tag tag-priority">高优先级</span></div></div></div>
+        <div class="action-item"><div class="action-check" onclick="toggleCheck(this)"></div><div class="action-body"><div class="action-title">细化留存功能 MVP 边界，输出需求文档</div><div class="action-meta"><span class="action-tag tag-owner">负责人：李明</span><span class="action-tag tag-due">截止：7月21日</span><span class="action-tag tag-priority">中优先级</span></div></div></div>
+        <div class="action-item"><div class="action-check" onclick="toggleCheck(this)"></div><div class="action-body"><div class="action-title">组织下一次评审会议，邀请王总参与排期确认</div><div class="action-meta"><span class="action-tag tag-owner">负责人：张伟</span><span class="action-tag tag-due">截止：7月23日</span></div></div></div>
+        <div class="action-item"><div class="action-check done" onclick="toggleCheck(this)">✓</div><div class="action-body"><div class="action-title" style="text-decoration:line-through;color:var(--text3)">确认 Q3 工程资源排期，同步王总</div><div class="action-meta"><span class="action-tag tag-owner">负责人：张伟</span><span class="action-tag tag-due">截止：7月16日</span></div></div></div>
+        <div class="action-item"><div class="action-check done" onclick="toggleCheck(this)">✓</div><div class="action-body"><div class="action-title" style="text-decoration:line-through;color:var(--text3)">发送面试评估报告给 HR</div><div class="action-meta"><span class="action-tag tag-owner">负责人：张伟</span><span class="action-tag tag-due">截止：7月13日</span></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 集成 -->
+  <div id="page-integrations" class="page">
+    <div class="page-header"><div class="page-title">第三方集成</div><div class="page-sub">连接你常用的工作工具，让信息自动流转</div></div>
+    <div class="page-body">
+      <div class="integrations">
+        <div class="integration-card"><div class="int-icon">💬</div><div class="int-name">Slack</div><div class="int-status int-connected">● 已连接</div><button class="int-btn connected">已连接</button></div>
+        <div class="integration-card"><div class="int-icon">📋</div><div class="int-name">Notion</div><div class="int-status int-connected">● 已连接</div><button class="int-btn connected">已连接</button></div>
+        <div class="integration-card"><div class="int-icon">📅</div><div class="int-name">Google Calendar</div><div class="int-status int-connected">● 已连接</div><button class="int-btn connected">已连接</button></div>
+        <div class="integration-card"><div class="int-icon">🎯</div><div class="int-name">Salesforce</div><div class="int-status int-available">○ 未连接</div><button class="int-btn">连接</button></div>
+        <div class="integration-card"><div class="int-icon">📌</div><div class="int-name">Jira</div><div class="int-status int-available">○ 未连接</div><button class="int-btn">连接</button></div>
+        <div class="integration-card"><div class="int-icon">📧</div><div class="int-name">Gmail</div><div class="int-status int-available">○ 未连接</div><button class="int-btn">连接</button></div>
+        <div class="integration-card"><div class="int-icon">🔷</div><div class="int-name">Linear</div><div class="int-status int-available">○ 未连接</div><button class="int-btn">连接</button></div>
+        <div class="integration-card"><div class="int-icon">📊</div><div class="int-name">HubSpot</div><div class="int-status int-available">○ 未连接</div><button class="int-btn">连接</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 个人中心 -->
+  <div id="page-profile" class="page">
+    <div class="page-header"><div class="page-title">个人中心</div><div class="page-sub">管理你的账户信息与使用偏好</div></div>
+    <div class="page-body">
+      <div class="profile-card">
+        <div class="profile-top">
+          <div class="profile-avatar">BB</div>
+          <div><div class="profile-name">bb-001-studio</div><div class="profile-email">bb001@studio.com</div></div>
+          <div class="profile-plan">Hobby Plan</div>
+        </div>
+        <div class="profile-grid">
+          <div class="profile-field"><label>加入时间</label><div class="value">2025年7月</div></div>
+          <div class="profile-field"><label>本月会议</label><div class="value">12 场</div></div>
+          <div class="profile-field"><label>转录时长</label><div class="value">9.4 小时</div></div>
+          <div class="profile-field"><label>剩余额度</label><div class="value" style="color:var(--amber)">2.6 小时</div></div>
+        </div>
+      </div>
+      <div class="profile-card">
+        <div class="profile-section-title">使用偏好</div>
+        <div class="pref-row"><div class="pref-info"><div class="pref-name">实时转录</div><div class="pref-desc">会议开始时自动启动转录</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="pref-row"><div class="pref-info"><div class="pref-name">会后自动发送纪要</div><div class="pref-desc">会议结束后自动发送给参会者</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="pref-row"><div class="pref-info"><div class="pref-name">行动项提醒</div><div class="pref-desc">截止日前一天邮件提醒负责人</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="pref-row"><div class="pref-info"><div class="pref-name">多语言转录</div><div class="pref-desc">自动检测并支持中英混合转录</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-primary-md">保存设置</button>
+        <button class="btn-ghost-md" style="color:var(--red);border-color:rgba(239,68,68,0.3)">退出登录</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const pageNavMap={'home':0,'meetings':1,'actions':2,'prepare':3,'live':4,'followup':5,'integrations':6,'profile':7};
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const idx=pageNavMap[name];
+  if(idx!==undefined){const items=document.querySelectorAll('.nav-item');if(items[idx])items[idx].classList.add('active');}
+}
+function togglePlatform(el){el.classList.toggle('on');}
+function selectTemplate(el){el.closest('.templates-grid').querySelectorAll('.template-item').forEach(t=>t.classList.remove('selected'));el.classList.add('selected');}
+function simulateUpload(zone){zone.innerHTML='<div style="font-size:28px">✅</div><p style="color:var(--green)">已上传：Q3产品规划.pptx · 会议背景资料.pdf</p><small>AI 正在提取关键信息…</small>';}
+const moreLines=[
+  {speaker:'张伟（主持人）',cls:'me',text:'好，那就按 MVP 方向走，这周五先确认架构方案。',time:'00:24:10'},
+  {speaker:'陈晓（技术）',cls:'other',text:'我这周五前可以出架构设计文档，大家提前看一下。',time:'00:25:02'},
+  {speaker:'李明（产品）',cls:'other',text:'好的，我把需求边界同步给你，方便你设计。',time:'00:25:45'},
+];
+let lineIdx=0;
+function addTranscriptLine(){
+  const box=document.getElementById('transcript');
+  const l=moreLines[lineIdx%moreLines.length];lineIdx++;
+  const div=document.createElement('div');
+  div.className='t-line t-new';
+  div.innerHTML=`<div class="t-speaker ${l.cls}">${l.speaker}</div><div class="t-text">${l.text}</div><div class="t-time">${l.time}</div>`;
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
+}
+const responses={'MVP':'建议将功能分为「核心链路」和「增强功能」两层：核心层包含数据采集、基础分析看板；增强层包含 A/B 测试、个性化推荐等，可在 V1.5 迭代交付。','依赖':'用户增长工具依赖事件追踪系统，而留存模型也需要同一套事件数据。建议统一设计数据层，上层功能各自独立开发，避免耦合。','资源':'类似规模的功能模块（含数据层+前端看板），业内通常需要 2-3 名工程师，约 3-4 周完成。','分歧':'当前主要分歧：① 留存系统是否和增长工具同期开发；② 底层架构复用还是各自独立。建议先确认技术架构，再做工期规划。'};
+function askAssist(q){const r=document.getElementById('assist-response');r.style.display='block';r.textContent='正在结合当前会议内容分析…';setTimeout(()=>{const key=Object.keys(responses).find(k=>q.includes(k));r.textContent=key?responses[key]:'已结合当前会议上下文分析：建议聚焦核心用户旅程，先解决数据孤岛问题，再推进功能扩展。';},500);}
+function sendAssist(){const input=document.getElementById('assistInput');if(!input.value.trim())return;askAssist(input.value);input.value='';}
+function toggleCheck(el){const done=el.classList.toggle('done');el.textContent=done?'✓':'';const title=el.nextElementSibling.querySelector('.action-title');title.style.textDecoration=done?'line-through':'none';title.style.color=done?'var(--text3)':'';}
+function setFilter(el){document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');}
+let secs=23*60+41;
+setInterval(()=>{secs++;const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;const el=document.getElementById('timer');if(el)el.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;},1000);
+</script>
+</body>
+</html>
